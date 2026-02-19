@@ -3,7 +3,7 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "mcp-llm-courts"
+name = "msp-llm-filters"
 version = "0.1.0"
 description = "MCP server wrapper for court cases API"
 requires-python = ">=3.10"
@@ -26,7 +26,8 @@ dev = [
 ]
 
 [project.scripts]
-mcp-llm-courts = "mcp_llm_courts.server:main_entry"
+mcp-llm-courts = "msp_llm_filters.server:main_entry"
+mcp-batch-cards = "msp_llm_filters.server_batchcards:main_entry"
 
 [tool.setuptools.packages.find]
 where = ["src"]

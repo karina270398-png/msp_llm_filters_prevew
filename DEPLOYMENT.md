@@ -14,8 +14,8 @@
 
 Шаг 1 — Копируем проект на сервер
 - Вариант A: git clone
-  - `git clone <repo_url> && cd mcp_llm_courts`
-- Вариант B: загрузите архив/scp и распакуйте в каталог, затем `cd mcp_llm_courts`
+  - `git clone <repo_url> && cd msp_llm_filters`
+- Вариант B: загрузите архив/scp и распакуйте в каталог, затем `cd msp_llm_filters`
 
 Шаг 2 — Создаём .env с настройками
 - На сервере создайте файл `.env` рядом с docker-compose.yml и пропишите значения:

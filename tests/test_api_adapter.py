@@ -1,5 +1,5 @@
 import pytest
-from mcp_llm_courts.server import api_search, Settings, SearchRequest, SearchFilters
+from msp_llm_filters.server import api_search, Settings, SearchRequest, SearchFilters
 
 
 @pytest.mark.asyncio

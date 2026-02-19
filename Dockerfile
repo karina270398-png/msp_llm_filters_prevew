@@ -26,4 +26,4 @@ ENV UVICORN_HOST=0.0.0.0 \
     UVICORN_PORT=8000
 
 # Start the web app
-CMD ["uvicorn", "mcp_llm_courts.webapp:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "msp_llm_filters.webapp:app", "--host", "0.0.0.0", "--port", "8000"]

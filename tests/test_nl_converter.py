@@ -1,4 +1,4 @@
-from mcp_llm_courts.nl_converter import convert_nl_to_filters
+from msp_llm_filters.nl_converter import convert_nl_to_filters
 
 
 def test_convert_date_march():

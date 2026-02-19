@@ -1,5 +1,5 @@
 import pytest
-from mcp_llm_courts.server import SearchRequest, SearchFilters
+from msp_llm_filters.server import SearchRequest, SearchFilters
 from pydantic import ValidationError
 
 

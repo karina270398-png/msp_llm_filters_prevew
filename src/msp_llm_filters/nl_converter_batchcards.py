@@ -64,18 +64,27 @@ def convert_nl_to_batchcards(query: str) -> Dict[str, Any]:
             if rc not in filters["region_codes"]:
                 filters["region_codes"].append(rc)
 
-    # Тип контрагента
-    if re.search(r"\bип\b|индивидуальн[а-яё]*\s+предпринимател", q):
+    # Тип контрагента (с учётом отрицаний, напр. "не ип")
+    neg_ip = re.search(r"\bне\s+ип\b", q) is not None
+    pos_ip = re.search(r"\bип\b|индивидуальн[а-яё]*\s+предпринимател", q) is not None
+    neg_ul = re.search(r"\bне\s+(?:юр(?:лиц|идическ)[а-яё]*|ооо|ао|зао|oao|ul)\b", q) is not None
+    pos_ul = re.search(r"юр(лиц|идическ)[а-яё]*|\bооо\b|\bао\b|\bзао\b|\boao\b", q) is not None
+    pos_fl = re.search(r"физ(ическ)[а-яё]*\s+лиц", q) is not None
+
+    if pos_ip and not neg_ip and not pos_ul:
         filters["counterparty_type"] = "ip"
-    elif re.search(r"юр(лиц|идическ)[а-яё]*|\bооо\b|\bао\b|\bзао\b|\boao\b", q):
+    elif pos_ul and not neg_ul and not pos_ip:
         filters["counterparty_type"] = "ul"
-    elif re.search(r"физ(ическ)[а-яё]*\s+лиц", q):
+    elif pos_fl:
         filters["counterparty_type"] = "fl"
+    elif neg_ip and ("компан" in q or pos_ul) and not neg_ul:
+        # Явно исключили ИП и упомянули "компании" или UL-маркеры — считаем UL
+        filters["counterparty_type"] = "ul"
 
     # Флаги
     if "только действующ" in q or "действующие" in q:
         filters["only_active"] = True
-    if "с выручк" in q or "есть выручк" in q:
+    if "с выручко" in q or "есть выручка" in q:
         filters["has_income"] = True
     if "только с бфо" in q or "с бфо" in q:
         filters["only_with_bfo"] = True
@@ -206,11 +215,11 @@ def convert_nl_to_batchcards(query: str) -> Dict[str, Any]:
     if egr:
         filters["egr_statuses"] = egr
 
-    # ОПФ / типы контрагента по кодам/ярлыкам
+    # ОПФ / типы контрагента по кодам/ярлыкам (учитываем отрицания)
     opf: List[str] = []
-    if re.search(r"\bип\b", q):
+    if (re.search(r"\bип\b", q) and not re.search(r"\bне\s+ип\b", q)):
         opf.append("ip")
-    if re.search(r"\bул\b|юр(лиц|идическ)", q):
+    if (re.search(r"\bул\b|юр(лиц|идическ)", q) and not re.search(r"\bне\s+(?:ул|юр(?:лиц|идическ))\b", q)):
         opf.append("ul")
     if opf:
         filters["opf_codes"] = opf
@@ -255,6 +264,11 @@ def convert_nl_to_batchcards(query: str) -> Dict[str, Any]:
         filters["only_nostroy_members"] = True
     if "ноприз" in q:
         filters["only_nopriz_members"] = True
+
+    # Общий текстовый поиск по специализации: "специализирующ*ся на <термин>"
+    m = re.search(r"специализирующ[а-яё]*\s*ся\s*на\s*([а-яa-z0-9\-\s]+?)(?:[,.]|$)", q)
+    if m:
+        filters["search_terms"] = [m.group(1).strip()]
 
     # Росаккредитация
     if "росаккред" in q:
@@ -401,13 +415,16 @@ def convert_nl_to_batchcards(query: str) -> Dict[str, Any]:
             co["region_code"] = m.group(1)
         filters["contracts"] = co
 
-    # Запрос адреса (минимально)
-    if re.search(r"адрес|в городе|в г\.", q):
+    # Запрос адреса (расширено: поддержка "в/по городу <city>")
+    if re.search(r"адрес|в\s+городе|в\s+г\.|по\s+городу", q):
         ar: Dict[str, Any] = {}
         af: List[Dict[str, Any]] = []
-        m = re.search(r"в\s+г(?:ород[е]?)?\.?\s*([А-Яа-яё\-\s]+)", query)
+        # Ищем город после "в" или "по" (регистронезависимо, берём оригинальный текст)
+        m = re.search(r"(?i)(?:в|по)\s+(?:г\.|город[а-яё]*)\s*([А-Яа-яё\-\s]+?)(?=,|$)", query, flags=re.IGNORECASE)
         if m:
-            af.append({"city": m.group(1).strip()})
+            city = m.group(1).strip()
+            af.append({"city": city})
+            ar["search_terms"] = [city]
         # регион код цифрами
         m = re.findall(r"\b(\d{2})\b\s*регион", q)
         for rc in m:
